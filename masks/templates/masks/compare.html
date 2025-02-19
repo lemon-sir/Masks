@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">脸谱属性对比</h2>
+    
+    <form method="post" class="mb-4">
+        {% csrf_token %}
+        <div class="row">
+            {% for field in form %}
+            <div class="col-md-3 mb-3">
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="btn-group" role="group">
+            <button type="submit" name="action" value="check_unachieved" class="btn btn-primary me-2">查询未达成</button>
+            <button type="submit" name="action" value="check_achieved" class="btn btn-success">查询已达成</button>
+        </div>
+    </form>
+
+    {% if unachieved_masks and action == 'check_unachieved' %}
+    <h3 class="mt-4 mb-3">未达成的脸谱（按差值从小到大排序）：</h3>
+    <div class="row">
+        {% for mask in unachieved_masks %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ mask.name }}</h5>
+                    <p class="card-text">{{ mask.collection_info }}</p>
+                    <div class="mt-2">
+                        <h6>距离达成还需提升：</h6>
+                        <ul class="list-unstyled">
+                        {% for field, diff in mask.differences.items %}
+                            <li><small>{{ field }}: {{ diff }}</small></li>
+                        {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if achieved_masks and action == 'check_achieved' %}
+    <h3 class="mt-4 mb-3">已达成的脸谱：</h3>
+    <div class="row">
+        {% for mask in achieved_masks %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ mask.name }}</h5>
+                    <p class="card-text">{{ mask.collection_info }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if request.method == 'POST' and action == 'check_unachieved' and not unachieved_masks %}
+    <div class="alert alert-info mt-4">
+        没有找到未达成的脸谱。
+    </div>
+    {% endif %}
+
+    {% if request.method == 'POST' and action == 'check_achieved' and not achieved_masks %}
+    <div class="alert alert-info mt-4">
+        没有找到已达成的脸谱。
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 
