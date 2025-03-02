@@ -27,6 +27,7 @@ class Mask(models.Model):
     tipo = models.IntegerField(verbose_name='体魄')
     weiwang = models.IntegerField(verbose_name='威望')
     collection_info = models.TextField(verbose_name='收集属性信息')
+    color = models.CharField(max_length=100, blank=True, default='')
 
     def __str__(self):
         return self.name
