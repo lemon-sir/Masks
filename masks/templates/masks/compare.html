@@ -36,7 +36,7 @@
             <div class="input-group me-3" style="width: 300px;">
                 <input type="text" id="searchInput" class="form-control" placeholder="搜索脸谱名称或收集属性...">
             </div>
-            <button id="exportBtn" class="btn btn-secondary" onclick="exportResults()">导出结果</button>
+            <button type="button" id="exportBtn" class="btn btn-secondary" onclick="exportResults()">导出结果</button>
         </div>
     </form>
 
@@ -158,12 +158,21 @@
 
 <script>
 function exportResults() {
+    console.log('开始导出...');
     const container = document.getElementById('exportContainer');
+    
+    if (!container) {
+        console.error('找不到导出容器');
+        return;
+    }
+    
     if (!container.children.length) {
+        console.log('没有可导出的内容');
         alert('没有可导出的查询结果');
         return;
     }
 
+    console.log('准备生成图片...');
     container.classList.remove('d-none');
     
     const now = new Date();
@@ -174,9 +183,10 @@ function exportResults() {
         scale: 2,
         windowWidth: container.scrollWidth,
         windowHeight: container.scrollHeight,
-        logging: false,
+        logging: true,
         useCORS: true
     }).then(canvas => {
+        console.log('图片生成成功');
         const link = document.createElement('a');
         link.download = defaultFileName;
         link.href = canvas.toDataURL('image/png', 1.0);
@@ -185,8 +195,20 @@ function exportResults() {
         document.body.removeChild(link);
         
         container.classList.add('d-none');
+    }).catch(error => {
+        console.error('生成图片时出错:', error);
+        alert('导出失败，请查看控制台了解详细信息');
     });
 }
+
+// 确保在页面加载完成后绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        console.log('找到导出按钮');
+        exportBtn.onclick = exportResults;
+    }
+});
 
 document.getElementById('searchInput').addEventListener('input', function() {
     const searchText = this.value.toLowerCase();
