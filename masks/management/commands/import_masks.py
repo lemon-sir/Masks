@@ -9,7 +9,8 @@ class Command(BaseCommand):
     help = '从Excel文件导入脸谱数据'
 
     def handle(self, *args, **options):
-        excel_path = 'D:\\Desktop\\Git\Masks\\masks\\static\\Data\\RawData.xlsx'
+        # 使用相对路径获取Excel文件
+        excel_path = os.path.join(settings.BASE_DIR, 'masks', 'static', 'Data', 'RawData.xlsx')
         
         if not os.path.exists(excel_path):
             self.stdout.write(self.style.ERROR(f'Excel文件不存在：{excel_path}'))
