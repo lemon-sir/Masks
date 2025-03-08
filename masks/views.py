@@ -45,41 +45,51 @@ def compare_masks(request):
     
     if request.method == 'POST' and form.is_valid():
         print("表单验证通过")
-        filled_fields = {
+        # 分别获取非0和0值的字段
+        nonzero_fields = {
             field: int(value) 
             for field, value in form.cleaned_data.items() 
-            if value is not None and value != '' and field not in ['name', 'collection_info']
+            if value is not None and value != '' and int(value) > 0 and field not in ['name', 'collection_info']
         }
         
-        print(f"填写的字段: {filled_fields}")
+        zero_fields = {
+            field
+            for field, value in form.cleaned_data.items() 
+            if value is not None and value != '' and int(value) == 0 and field not in ['name', 'collection_info']
+        }
         
-        if filled_fields:
+        print(f"非0字段: {nonzero_fields}")
+        print(f"0值字段: {zero_fields}")
+        
+        if nonzero_fields or zero_fields:
             all_masks = Mask.objects.all()
             print(f"数据库中的脸谱数量: {all_masks.count()}")
             
             for mask in all_masks:
-                requirements = {}
-                for field in filled_fields.keys():
-                    db_value = getattr(mask, field)
-                    if db_value > 0:
-                        requirements[field] = db_value
+                # 检查是否有任何必需属性被设置为0
+                has_zero_required = False
+                for zero_field in zero_fields:
+                    if getattr(mask, zero_field) > 0:
+                        has_zero_required = True
+                        break
                 
-                if not requirements:
+                # 如果有必需属性为0，则既不是已达成也不是未达成
+                if has_zero_required:
                     continue
                 
                 is_achieved = True
                 differences = {}
                 
-                for field, required_value in requirements.items():
-                    user_value = filled_fields.get(field, 0)
-                    if user_value < required_value:
+                # 只检查非0字段
+                for field, user_value in nonzero_fields.items():
+                    mask_value = getattr(mask, field)
+                    if mask_value > 0 and user_value < mask_value:
                         is_achieved = False
-                        differences[field] = required_value - user_value
+                        differences[field] = mask_value - user_value
                 
                 if action == 'check_achieved' and is_achieved:
                     achieved_masks.append(mask)
                 elif action == 'check_unachieved' and not is_achieved:
-                    # 将字段名称转换为中文
                     mask.differences = {field_names[field]: value for field, value in differences.items()}
                     unachieved_masks.append(mask)
             

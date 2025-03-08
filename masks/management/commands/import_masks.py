@@ -9,7 +9,8 @@ class Command(BaseCommand):
     help = '从Excel文件导入脸谱数据'
 
     def handle(self, *args, **options):
-        excel_path = '/Users/cassius.huang/Desktop/Kivar/Darki/Masks/masks/static/Data/RawData.xlsx'
+        # 使用相对路径获取Excel文件
+        excel_path = os.path.join(settings.BASE_DIR, 'masks', 'static', 'Data', 'RawData.xlsx')
         
         if not os.path.exists(excel_path):
             self.stdout.write(self.style.ERROR(f'Excel文件不存在：{excel_path}'))
@@ -30,6 +31,7 @@ class Command(BaseCommand):
             # 将字符串列的NaN填充为空字符串
             df['收集属性'] = df['收集属性'].fillna('')
             df['脸谱名称'] = df['脸谱名称'].fillna('')
+            df['颜色'] = df['颜色'].fillna('')
             
             self.stdout.write(self.style.SUCCESS(f'Excel文件中的列名：{list(df.columns)}'))
             
@@ -64,7 +66,8 @@ class Command(BaseCommand):
                         mingqi=int(row['名气']),
                         tipo=int(row['体魄']),
                         weiwang=int(row['威望']),
-                        collection_info=row['收集属性']
+                        collection_info=row['收集属性'],
+                        color=row['颜色']
                     )
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f'导入行失败：{str(e)}'))

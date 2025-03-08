@@ -1,8 +1,20 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<style>
+.mask-card-白 { background-color: #ffffff; border: 1px solid #ddd; }
+.mask-card-绿 { background-color: #90EE90; }
+.mask-card-蓝 { background-color: #87CEEB; }
+.mask-card-紫 { background-color: #DDA0DD; }
+.mask-card-金 { background-color: #FFD700; }
+/* 根据您的颜色值添加其他类 */
+</style>
+
 <div class="container mt-4">
-    <h2 class="mb-4">脸谱属性对比</h2>
+    <h2 class="mb-4">平行服脸谱属性查询</h2>
+    <div class="alert alert-info mb-4">
+        <small>提示：输入0的属性将不会参与脸谱推荐计算</small>
+    </div>
     
     <form method="post" class="mb-4">
         {% csrf_token %}
@@ -16,62 +28,202 @@
             </div>
             {% endfor %}
         </div>
-        <div class="btn-group" role="group">
-            <button type="submit" name="action" value="check_unachieved" class="btn btn-primary me-2">查询未达成</button>
-            <button type="submit" name="action" value="check_achieved" class="btn btn-success">查询已达成</button>
+        <div class="d-flex align-items-center">
+            <div class="btn-group me-3" role="group">
+                <button type="submit" name="action" value="check_unachieved" class="btn btn-primary me-2">查询未达成</button>
+                <button type="submit" name="action" value="check_achieved" class="btn btn-success">查询已达成</button>
+            </div>
+            <div class="input-group me-3" style="width: 300px;">
+                <input type="text" id="searchInput" class="form-control" placeholder="搜索脸谱名称或收集属性...">
+            </div>
+            <button type="button" id="exportBtn" class="btn btn-secondary" onclick="exportResults()">导出结果</button>
         </div>
     </form>
 
-    {% if unachieved_masks and action == 'check_unachieved' %}
-    <h3 class="mt-4 mb-3">未达成的脸谱（按差值从小到大排序）：</h3>
-    <div class="row">
-        {% for mask in unachieved_masks %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ mask.name }}</h5>
-                    <p class="card-text">{{ mask.collection_info }}</p>
-                    <div class="mt-2">
-                        <h6>距离达成还需提升：</h6>
-                        <ul class="list-unstyled">
-                        {% for field, diff in mask.differences.items %}
-                            <li><small>{{ field }}: {{ diff }}</small></li>
-                        {% endfor %}
-                        </ul>
+    <div id="exportContainer" class="d-none">
+        <div class="user-inputs mb-4">
+            <h3>查询参数：</h3>
+            <div class="row">
+                {% for field in form %}
+                {% if field.value and field.value != '0' and field.name not in 'name,collection_info' %}
+                <div class="col-md-3">
+                    <strong>{{ field.label }}:</strong> {{ field.value }}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if unachieved_masks and action == 'check_unachieved' %}
+        <div class="unachieved-section mb-4">
+            <h3>未达成的脸谱（按差值从小到大排序）：</h3>
+            <div class="row">
+                {% for mask in unachieved_masks %}
+                <div class="col-md-4 mb-4">
+                    <div class="card mask-card-{{ mask.color|lower }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ mask.name }}</h5>
+                            <p class="card-text">{{ mask.collection_info }}</p>
+                            <div class="mt-2">
+                                <h6>距离达成还需提升：</h6>
+                                <ul class="list-unstyled">
+                                {% for field, diff in mask.differences.items %}
+                                    <li><small>{{ field }}: {{ diff }}</small></li>
+                                {% endfor %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if achieved_masks and action == 'check_achieved' %}
+        <div class="achieved-section mb-4">
+            <h3>已达成的脸谱：</h3>
+            <div class="row">
+                {% for mask in achieved_masks %}
+                <div class="col-md-4 mb-4">
+                    <div class="card mask-card-{{ mask.color|lower }}">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ mask.name }}</h5>
+                            <p class="card-text">{{ mask.collection_info }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if request.method == 'POST' and action == 'check_unachieved' and not unachieved_masks %}
+        <div class="alert alert-info mt-4">
+            没有找到未达成的脸谱。
+        </div>
+        {% endif %}
+
+        {% if request.method == 'POST' and action == 'check_achieved' and not achieved_masks %}
+        <div class="alert alert-info mt-4">
+            没有找到已达成的脸谱。
+        </div>
+        {% endif %}
+    </div>
+
+    <div id="displayContainer">
+        {% if unachieved_masks and action == 'check_unachieved' %}
+        <h3 class="mt-4 mb-3">未达成的脸谱（按差值从小到大排序）：</h3>
+        <div class="row">
+            {% for mask in unachieved_masks %}
+            <div class="col-md-4 mb-4">
+                <div class="card mask-card-{{ mask.color|lower }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ mask.name }}</h5>
+                        <p class="card-text">{{ mask.collection_info }}</p>
+                        <div class="mt-2">
+                            <h6>距离达成还需提升：</h6>
+                            <ul class="list-unstyled">
+                            {% for field, diff in mask.differences.items %}
+                                <li><small>{{ field }}: {{ diff }}</small></li>
+                            {% endfor %}
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-    </div>
-    {% endif %}
+        {% endif %}
 
-    {% if achieved_masks and action == 'check_achieved' %}
-    <h3 class="mt-4 mb-3">已达成的脸谱：</h3>
-    <div class="row">
-        {% for mask in achieved_masks %}
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">{{ mask.name }}</h5>
-                    <p class="card-text">{{ mask.collection_info }}</p>
+        {% if achieved_masks and action == 'check_achieved' %}
+        <h3 class="mt-4 mb-3">已达成的脸谱：</h3>
+        <div class="row">
+            {% for mask in achieved_masks %}
+            <div class="col-md-4 mb-4">
+                <div class="card mask-card-{{ mask.color|lower }}">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ mask.name }}</h5>
+                        <p class="card-text">{{ mask.collection_info }}</p>
+                    </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
-        {% endfor %}
+        {% endif %}
     </div>
-    {% endif %}
-
-    {% if request.method == 'POST' and action == 'check_unachieved' and not unachieved_masks %}
-    <div class="alert alert-info mt-4">
-        没有找到未达成的脸谱。
-    </div>
-    {% endif %}
-
-    {% if request.method == 'POST' and action == 'check_achieved' and not achieved_masks %}
-    <div class="alert alert-info mt-4">
-        没有找到已达成的脸谱。
-    </div>
-    {% endif %}
 </div>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<script>
+function exportResults() {
+    console.log('开始导出...');
+    const container = document.getElementById('exportContainer');
+    
+    if (!container) {
+        console.error('找不到导出容器');
+        return;
+    }
+    
+    if (!container.children.length) {
+        console.log('没有可导出的内容');
+        alert('没有可导出的查询结果');
+        return;
+    }
+
+    console.log('准备生成图片...');
+    container.classList.remove('d-none');
+    
+    const now = new Date();
+    const defaultFileName = `脸谱查询结果_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}${now.getSeconds().toString().padStart(2,'0')}.png`;
+
+    html2canvas(container, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+        windowWidth: container.scrollWidth,
+        windowHeight: container.scrollHeight,
+        logging: true,
+        useCORS: true
+    }).then(canvas => {
+        console.log('图片生成成功');
+        const link = document.createElement('a');
+        link.download = defaultFileName;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        container.classList.add('d-none');
+    }).catch(error => {
+        console.error('生成图片时出错:', error);
+        alert('导出失败，请查看控制台了解详细信息');
+    });
+}
+
+// 确保在页面加载完成后绑定事件
+document.addEventListener('DOMContentLoaded', function() {
+    const exportBtn = document.getElementById('exportBtn');
+    if (exportBtn) {
+        console.log('找到导出按钮');
+        exportBtn.onclick = exportResults;
+    }
+});
+
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchText = this.value.toLowerCase();
+    const cards = document.querySelectorAll('.card');
+    
+    cards.forEach(card => {
+        const name = card.querySelector('.card-title').textContent.toLowerCase();
+        const info = card.querySelector('.card-text').textContent.toLowerCase();
+        
+        if (name.includes(searchText) || info.includes(searchText)) {
+            card.parentElement.style.display = '';
+        } else {
+            card.parentElement.style.display = 'none';
+        }
+    });
+});
+</script>
 {% endblock %} 
