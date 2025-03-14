@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-)ep)e8ew_#t*igyo&%+%*dm_nq9r-+uhzz)z!n-cc5=zi=&r@e
 DEBUG = False
 
 
-ALLOWED_HOSTS = ['darki.top', 'www.darki.top', 'localhost', '127.0.0.1']  
+ALLOWED_HOSTS = ['darki.top', 'www.darki.top', 'localhost', '127.0.0.1','8.138.5.86']  
 
 
 # Application definition
