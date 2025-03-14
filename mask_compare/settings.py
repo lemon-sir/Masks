@@ -24,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-)ep)e8ew_#t*igyo&%+%*dm_nq9r-+uhzz)z!n-cc5=zi=&r@e'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 
 ALLOWED_HOSTS = ['darki.top', 'www.darki.top', 'localhost', '127.0.0.1']  
