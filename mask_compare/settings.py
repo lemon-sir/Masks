@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-)ep)e8ew_#t*igyo&%+%*dm_nq9r-+uhzz)z!n-cc5=zi=&r@e
 DEBUG = True
 
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['darki.top', 'www.darki.top', 'localhost', '127.0.0.1']  
 
 
 # Application definition
@@ -51,6 +51,11 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+# 添加安全设置
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
 
 ROOT_URLCONF = 'mask_compare.urls'
 
