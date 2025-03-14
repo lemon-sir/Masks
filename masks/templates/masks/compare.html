@@ -2,12 +2,209 @@
 
 {% block content %}
 <style>
+/* 卡片颜色样式 */
 .mask-card-白 { background-color: #ffffff; border: 1px solid #ddd; }
 .mask-card-绿 { background-color: #90EE90; }
 .mask-card-蓝 { background-color: #87CEEB; }
 .mask-card-紫 { background-color: #DDA0DD; }
 .mask-card-金 { background-color: #FFD700; }
-/* 根据您的颜色值添加其他类 */
+
+/* 通用布局样式 */
+.container {
+    padding: 15px;
+    max-width: 1400px;  /* 调整最大宽度以适应四列布局 */
+}
+
+/* 行布局 */
+.row {
+    display: flex;
+    flex-wrap: wrap !important;
+    margin: -2px;
+    align-items: stretch;
+}
+
+/* 列布局 - 统一使用四列 */
+.col-md-4, .col-6 {
+    width: 25% !important;
+    padding: 2px;
+    flex: 0 0 25%;
+    display: flex;
+}
+
+/* 卡片样式 */
+.card {
+    margin: 0;
+    border-radius: 4px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-body {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.card-title {
+    font-size: 1rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.card-text {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 差值列表样式 */
+.list-unstyled {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.list-unstyled li {
+    font-size: 0.9rem;
+    line-height: 1.3;
+    padding: 2px 0;
+}
+
+/* 表单布局 */
+.form-group {
+    margin-bottom: 8px;
+}
+
+.form-label {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+    white-space: nowrap;
+}
+
+.form-control {
+    height: 32px;
+    font-size: 0.9rem;
+    padding: 4px 8px;
+}
+
+/* 导出按钮和搜索框样式 */
+.action-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.search-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+    .container {
+        padding: 8px;
+    }
+    
+    .card-body {
+        padding: 4px;
+        font-size: 0.7rem;
+    }
+    
+    .card-title {
+        font-size: 0.8rem;
+        margin-bottom: 2px;
+    }
+    
+    .card-text {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+        line-height: 1.2;
+    }
+    
+    .list-unstyled li {
+        font-size: 0.7rem;
+        line-height: 1.2;
+        padding: 1px 0;
+    }
+    
+    .form-label {
+        font-size: 0.75rem;
+        margin-bottom: 1px;
+    }
+    
+    .form-control {
+        height: 28px;
+        font-size: 0.8rem;
+        padding: 2px 4px;
+    }
+    
+    /* 移动端按钮和搜索框样式 */
+    .action-group {
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .btn-group {
+        width: 100%;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+        font-size: 0.9rem;
+        padding: 8px;
+        white-space: nowrap;
+    }
+    
+    .search-group {
+        width: 100%;
+    }
+    
+    #searchInput {
+        width: 100%;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+    
+    #exportBtn {
+        width: 100%;
+        height: 36px;
+        font-size: 0.9rem;
+    }
+    
+    /* 导出容器样式优化 */
+    #exportContainer {
+        padding: 10px;
+        background: #fff;
+    }
+    
+    #exportContainer h3 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+    
+    #exportContainer .user-inputs {
+        font-size: 0.8rem;
+        margin-bottom: 15px;
+    }
+}
 </style>
 
 <div class="container mt-4">
@@ -18,35 +215,40 @@
     
     <form method="post" class="mb-4">
         {% csrf_token %}
-        <div class="row">
+        <div class="row g-1">  <!-- 减小间距 -->
             {% for field in form %}
-            <div class="col-md-3 mb-3">
+            <div class="col-6 col-md-3">
                 <div class="form-group">
-                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                    {{ field }}
+                    <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                    <input type="number" 
+                           name="{{ field.name }}" 
+                           id="{{ field.id_for_label }}" 
+                           class="form-control"
+                           value="{{ field.value|default:'' }}">
                 </div>
             </div>
             {% endfor %}
         </div>
-        <div class="d-flex align-items-center">
-            <div class="btn-group me-3" role="group">
-                <button type="submit" name="action" value="check_unachieved" class="btn btn-primary me-2">查询未达成</button>
+        
+        <div class="action-group mt-3">
+            <div class="btn-group">
+                <button type="submit" name="action" value="check_unachieved" class="btn btn-primary">查询未达成</button>
                 <button type="submit" name="action" value="check_achieved" class="btn btn-success">查询已达成</button>
             </div>
-            <div class="input-group me-3" style="width: 300px;">
+            <div class="search-group">
                 <input type="text" id="searchInput" class="form-control" placeholder="搜索脸谱名称或收集属性...">
             </div>
-            <button type="button" id="exportBtn" class="btn btn-secondary" onclick="exportResults()">导出结果</button>
+            <button type="button" id="exportBtn" class="btn btn-secondary">导出结果</button>
         </div>
     </form>
 
     <div id="exportContainer" class="d-none">
         <div class="user-inputs mb-4">
             <h3>查询参数：</h3>
-            <div class="row">
+            <div class="row g-2">
                 {% for field in form %}
                 {% if field.value and field.value != '0' and field.name not in 'name,collection_info' %}
-                <div class="col-md-3">
+                <div class="col-6 col-md-3">
                     <strong>{{ field.label }}:</strong> {{ field.value }}
                 </div>
                 {% endif %}
@@ -57,9 +259,9 @@
         {% if unachieved_masks and action == 'check_unachieved' %}
         <div class="unachieved-section mb-4">
             <h3>未达成的脸谱（按差值从小到大排序）：</h3>
-            <div class="row">
+            <div class="row g-1">
                 {% for mask in unachieved_masks %}
-                <div class="col-md-4 mb-4">
+                <div class="col-md-4 col-6">
                     <div class="card mask-card-{{ mask.color|lower }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ mask.name }}</h5>
@@ -83,9 +285,9 @@
         {% if achieved_masks and action == 'check_achieved' %}
         <div class="achieved-section mb-4">
             <h3>已达成的脸谱：</h3>
-            <div class="row">
+            <div class="row g-1">
                 {% for mask in achieved_masks %}
-                <div class="col-md-4 mb-4">
+                <div class="col-md-4 col-6">
                     <div class="card mask-card-{{ mask.color|lower }}">
                         <div class="card-body">
                             <h5 class="card-title">{{ mask.name }}</h5>
@@ -114,9 +316,9 @@
     <div id="displayContainer">
         {% if unachieved_masks and action == 'check_unachieved' %}
         <h3 class="mt-4 mb-3">未达成的脸谱（按差值从小到大排序）：</h3>
-        <div class="row">
+        <div class="row g-1">
             {% for mask in unachieved_masks %}
-            <div class="col-md-4 mb-4">
+            <div class="col-md-4 col-6">
                 <div class="card mask-card-{{ mask.color|lower }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ mask.name }}</h5>
@@ -138,9 +340,9 @@
 
         {% if achieved_masks and action == 'check_achieved' %}
         <h3 class="mt-4 mb-3">已达成的脸谱：</h3>
-        <div class="row">
+        <div class="row g-1">
             {% for mask in achieved_masks %}
-            <div class="col-md-4 mb-4">
+            <div class="col-md-4 col-6">
                 <div class="card mask-card-{{ mask.color|lower }}">
                     <div class="card-body">
                         <h5 class="card-title">{{ mask.name }}</h5>
@@ -154,11 +356,9 @@
     </div>
 </div>
 
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-
 <script>
 function exportResults() {
-    console.log('开始导出...');
+    console.log('开始导出...');  // 调试信息
     const container = document.getElementById('exportContainer');
     
     if (!container) {
@@ -172,41 +372,54 @@ function exportResults() {
         return;
     }
 
-    console.log('准备生成图片...');
+    // 移除隐藏类并等待内容渲染
     container.classList.remove('d-none');
     
+    // 设置默认文件名
     const now = new Date();
-    const defaultFileName = `脸谱查询结果_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}${now.getSeconds().toString().padStart(2,'0')}.png`;
+    const defaultFileName = `脸谱查询结果_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}.png`;
 
-    html2canvas(container, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        windowWidth: container.scrollWidth,
-        windowHeight: container.scrollHeight,
-        logging: true,
-        useCORS: true
-    }).then(canvas => {
-        console.log('图片生成成功');
-        const link = document.createElement('a');
-        link.download = defaultFileName;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        container.classList.add('d-none');
-    }).catch(error => {
-        console.error('生成图片时出错:', error);
-        alert('导出失败，请查看控制台了解详细信息');
-    });
+    // 等待内容渲染完成
+    setTimeout(() => {
+        html2canvas(container, {
+            backgroundColor: '#ffffff',
+            scale: 2,  // 提高导出图片质量
+            useCORS: true,
+            logging: true,  // 启用调试日志
+            onclone: function(clonedDoc) {
+                const clonedContainer = clonedDoc.getElementById('exportContainer');
+                clonedContainer.style.padding = '20px';
+                clonedContainer.style.width = 'auto';
+                clonedContainer.style.height = 'auto';
+            }
+        }).then(canvas => {
+            console.log('图片生成成功');
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.download = defaultFileName;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 恢复容器隐藏状态
+            container.classList.add('d-none');
+        }).catch(error => {
+            console.error('生成图片时出错:', error);
+            alert('导出失败，请稍后重试');
+            container.classList.add('d-none');
+        });
+    }, 100);  // 给予渲染时间
 }
 
 // 确保在页面加载完成后绑定事件
 document.addEventListener('DOMContentLoaded', function() {
     const exportBtn = document.getElementById('exportBtn');
     if (exportBtn) {
-        console.log('找到导出按钮');
-        exportBtn.onclick = exportResults;
+        exportBtn.addEventListener('click', exportResults);
+        console.log('导出按钮事件已绑定');  // 调试信息
+    } else {
+        console.error('找不到导出按钮');  // 调试信息
     }
 });
 
