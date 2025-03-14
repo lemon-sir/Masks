@@ -1,3 +1,3 @@
 from .settings import *
 
-DEBUG = False 
+DEBUG = True  # 本地开发环境使用 True 
