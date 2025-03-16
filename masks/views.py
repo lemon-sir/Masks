@@ -1,7 +1,12 @@
 from django.shortcuts import render
 from .forms import MaskCompareForm
-from .models import Mask
+from .models import Mask, ImageUpload
 from django.db.models import Q
+from .utils import extract_attributes
+from django.http import JsonResponse, StreamingHttpResponse
+import os
+from django.conf import settings
+import json
 
 def compare_masks(request):
     print("视图函数被调用")
@@ -101,4 +106,51 @@ def compare_masks(request):
         'unachieved_masks': unachieved_masks,
         'achieved_masks': achieved_masks,
         'action': action,
-    }) 
+    })
+
+def upload_image(request):
+    print("Upload endpoint hit")
+    if request.method == 'POST' and request.FILES.getlist('images'):
+        print(f"Files received: {request.FILES.getlist('images')}")
+        combined_results = {}
+        
+        try:
+            for image in request.FILES.getlist('images'):
+                print(f"Processing image: {image.name}")
+                results = extract_attributes(image)
+                
+                if results.get('error'):
+                    print(f"Error processing {image.name}: {results['error']}")
+                    continue
+                
+                # 合并结果，保留非零值
+                for key, value in results.items():
+                    if value != 0 or key not in combined_results:
+                        combined_results[key] = value
+                
+                # 删除已处理的图片
+                try:
+                    image_path = os.path.join(settings.MEDIA_ROOT, 'uploads', image.name)
+                    if os.path.exists(image_path):
+                        os.remove(image_path)
+                except Exception as e:
+                    print(f"Error deleting image {image.name}: {e}")
+            
+            print(f"Final combined results: {combined_results}")
+            return JsonResponse({
+                'success': True,
+                'data': combined_results
+            }, content_type='application/json; charset=utf-8')
+            
+        except Exception as e:
+            print(f"Error processing upload: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, content_type='application/json; charset=utf-8')
+    
+    print("No files in request")
+    return JsonResponse({
+        'success': False, 
+        'error': '没有上传图片'
+    }, content_type='application/json; charset=utf-8') 

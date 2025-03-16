@@ -34,4 +34,12 @@ class Mask(models.Model):
 
     class Meta:
         verbose_name = '脸谱'
-        verbose_name_plural = '脸谱' 
+        verbose_name_plural = '脸谱'
+
+class ImageUpload(models.Model):
+    image = models.ImageField(upload_to='uploads/%Y/%m/%d/', verbose_name='截图')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = '图片上传'
+        verbose_name_plural = '图片上传' 
