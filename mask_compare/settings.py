@@ -178,3 +178,7 @@ if not os.path.exists(UPLOAD_DIR):
 # 文件上传设置
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880  # 5MB
+
+# 在文件末尾添加
+LOGIN_URL = 'masks:login'  # 指定登录页面的URL
+LOGIN_REDIRECT_URL = 'masks:compare_masks'  # 登录成功后的重定向页面

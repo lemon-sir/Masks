@@ -219,7 +219,6 @@
 </style>
 
 <div class="container mt-4">
-    <h2 class="mb-4">平行服脸谱属性查询</h2>
     <div class="alert alert-info mb-4">
         <small>提示：输入0的属性将不会参与脸谱推荐计算</small>
         <br>
@@ -460,6 +459,34 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('找不到导出按钮');  // 调试信息
     }
+    
+    // 检查是否有需要加载的参数
+    const paramsToLoad = localStorage.getItem('params_to_load');
+    if (paramsToLoad) {
+        try {
+            const params = JSON.parse(paramsToLoad);
+            // 填充表单
+            for (const [key, value] of Object.entries(params)) {
+                const input = document.querySelector(`input[name="${key}"]`);
+                if (input) {
+                    input.value = value;
+                    // 触发 input 事件以确保任何相关的表单验证或事件处理器都被触发
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+            // 清除已加载的参数
+            localStorage.removeItem('params_to_load');
+            
+            // 滚动到表单位置
+            const form = document.querySelector('form');
+            if (form) {
+                form.scrollIntoView({ behavior: 'smooth' });
+            }
+        } catch (error) {
+            console.error('Error loading params:', error);
+            alert('加载参数时发生错误');
+        }
+    }
 });
 
 document.getElementById('searchInput').addEventListener('input', function() {
@@ -480,6 +507,10 @@ document.getElementById('searchInput').addEventListener('input', function() {
 
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
     e.preventDefault();
+    {% if not user.is_cloud_member %}
+        alert('你当前不是云栈帮众，无法使用此功能');
+        return;
+    {% endif %}
     console.log('Form submitted');  // 调试信息
     
     const formData = new FormData(this);

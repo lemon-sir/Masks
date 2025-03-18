@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load custom_filters %}
+
+{% block content %}
+<div class="history-container">
+    <div class="history-header">
+        <h2 class="page-title">我的查询历史</h2>
+        <p class="history-tip">系统只保留最近5次查询记录</p>
+    </div>
+    
+    <div class="history-list">
+        {% for item in history %}
+        <div class="history-card" style="background-color: {{ item|random_color }}">
+            <div class="history-card-left">
+                <div class="history-meta">
+                    <span class="history-time">{{ item.query_time|date:"Y-m-d H:i:s" }}</span>
+                    <div class="history-name-container">
+                        <span class="history-name" data-id="{{ item.id }}">{{ item.get_display_name }}</span>
+                        <input type="text" class="edit-name-input" style="display: none;">
+                    </div>
+                </div>
+            </div>
+            <div class="history-card-content">
+                <div class="params-list">
+                    {% for param in item.get_formatted_params %}
+                    <span class="param-item">{{ param }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="history-card-actions">
+                <button class="btn-action btn-load-params" data-id="{{ item.id }}" title="导入参数">
+                    <i class="fas fa-file-import"></i>
+                    <span>导入参数</span>
+                </button>
+            </div>
+        </div>
+        {% empty %}
+        <div class="no-records">暂无查询记录</div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+/* 手机端样式覆盖 */
+@media (max-width: 768px) {
+    .history-card {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+    }
+    
+    .history-card-left {
+        flex: 0 0 100% !important;
+        width: 100% !important;
+        order: 1 !important;
+    }
+    
+    .history-card-content {
+        width: 100% !important;
+        overflow: visible !important;
+        order: 2 !important;
+        margin-top: 5px !important;
+    }
+    
+    .history-card-actions {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-left: 0 !important;
+        margin-top: 10px !important;
+        order: 3 !important;
+    }
+    
+    .params-list {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        width: 100% !important;
+    }
+    
+    .param-item {
+        margin-right: 5px !important;
+        margin-bottom: 5px !important;
+        font-size: 12px !important;
+        padding: 3px 8px !important;
+    }
+    
+    .btn-action {
+        min-width: 140px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .history-card {
+        padding: 12px !important;
+    }
+    
+    .param-item {
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+        border-radius: 10px !important;
+        margin-right: 4px !important;
+        margin-bottom: 4px !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 导入参数功能
+    document.querySelectorAll('.btn-load-params').forEach(button => {
+        button.addEventListener('click', function() {
+            {% if not user.is_cloud_member %}
+                alert('你当前不是云栈帮众，无法使用此功能');
+                return;
+            {% endif %}
+            const id = this.dataset.id;
+            fetch(`/load_history_params/${id}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 将参数存储到 localStorage
+                        localStorage.setItem('params_to_load', JSON.stringify(data.params));
+                        // 跳转到查询页面
+                        window.location.href = '/?load_params=true';
+                    } else {
+                        alert('加载参数失败：' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('加载参数时发生错误');
+                });
+        });
+    });
+});
+</script>
+{% endblock %}

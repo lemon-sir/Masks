@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-box">
+        <div class="auth-left">
+            <h2>已有账号?</h2>
+            <p>请登录🚀</p>
+            <a href="{% url 'masks:login' %}" class="btn-auth btn-outline">登录</a>
+        </div>
+        <div class="auth-right">
+            <div class="register-content">
+                <h2>注册</h2>
+                <form method="post" action="{% url 'masks:register' %}">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" id="username" name="username" placeholder="用户名" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="password1" name="password1" placeholder="密码" required>
+                    </div>
+                    <div class="form-group">
+                        <input type="password" id="password2" name="password2" placeholder="确认密码" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-auth">注册</button>
+                    </div>
+                    {% if messages %}
+                    <div class="messages">
+                        {% for message in messages %}
+                        <p class="{{ message.tags }}">{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* 手机端优化 */
+@media (max-width: 768px) {
+    .auth-container {
+        padding: 15px;
+        margin: 10px;
+    }
+    
+    .auth-box {
+        flex-direction: column-reverse;
+        border: none;
+    }
+    
+    .auth-left, .auth-right {
+        padding: 20px;
+    }
+    
+    .auth-left {
+        border-top: 1px solid #eee;
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    .register-content h2 {
+        font-size: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .form-group input {
+        padding: 10px;
+    }
+    
+    .btn-auth {
+        width: 100%;
+        max-width: none;
+    }
+    
+    .btn-outline {
+        max-width: 200px;
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 10px;
+        margin: 5px;
+    }
+    
+    .auth-left, .auth-right {
+        padding: 15px;
+    }
+}
+</style>
+{% endblock %} 
