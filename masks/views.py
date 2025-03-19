@@ -7,7 +7,7 @@ from django.http import JsonResponse, StreamingHttpResponse
 import os
 from django.conf import settings
 import json
-from django.contrib.auth import login, authenticate
+from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
@@ -328,4 +328,9 @@ def toggle_cloud_member(request, user_id):
             return JsonResponse({'success': True})
         except User.DoesNotExist:
             return JsonResponse({'success': False, 'error': '用户不存在'})
-    return JsonResponse({'success': False, 'error': '方法不允许'}) 
+    return JsonResponse({'success': False, 'error': '方法不允许'})
+
+def logout_view(request):
+    """自定义退出视图函数"""
+    logout(request)
+    return redirect('masks:login') 

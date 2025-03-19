@@ -9,7 +9,7 @@ urlpatterns = [
     path('upload/', views.upload_image, name='upload_image'),
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
-    path('logout/', LogoutView.as_view(next_page='masks:login'), name='logout'),
+    path('logout/', views.logout_view, name='logout'),
     path('user-management/', views.user_management, name='user_management'),
     path('toggle_user_status/<int:user_id>/', views.toggle_user_status, name='toggle_user_status'),
     path('delete_user/<int:user_id>/', views.delete_user, name='delete_user'),
