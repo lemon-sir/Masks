@@ -10,7 +10,7 @@
     
     <div class="history-list">
         {% for item in history %}
-        <div class="history-card" style="background-color: {{ item|random_color }}">
+        <div class="history-card" data-bg-color="{{ item|random_color }}">
             <div class="history-card-left">
                 <div class="history-meta">
                     <span class="history-time">{{ item.query_time|date:"Y-m-d H:i:s" }}</span>
@@ -108,18 +108,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // 导入参数功能
     document.querySelectorAll('.btn-load-params').forEach(button => {
         button.addEventListener('click', function() {
-            {% if not user.is_cloud_member %}
+            const isCloudMember = "{{ user.is_cloud_member|yesno:'true,false' }}";
+            if (isCloudMember !== 'true') {
                 alert('你当前不是云栈帮众，无法使用此功能');
                 return;
-            {% endif %}
+            }
+            
             const id = this.dataset.id;
             fetch(`/load_history_params/${id}/`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        // 将参数存储到 localStorage
                         localStorage.setItem('params_to_load', JSON.stringify(data.params));
-                        // 跳转到查询页面
                         window.location.href = '/?load_params=true';
                     } else {
                         alert('加载参数失败：' + data.error);

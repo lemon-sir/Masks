@@ -316,19 +316,30 @@ def load_history_params(request, history_id):
         print(f"Error in load_history_params: {e}")
         return JsonResponse({'success': False, 'error': '加载参数时发生错误'})
 
-@user_passes_test(is_admin)
+@login_required
 def toggle_cloud_member(request, user_id):
-    if request.method == 'POST':
-        try:
-            user = User.objects.get(id=user_id)
-            if user.is_superuser:
-                return JsonResponse({'success': False, 'error': '不能修改管理员状态'})
-            user.is_cloud_member = not user.is_cloud_member
-            user.save()
-            return JsonResponse({'success': True})
-        except User.DoesNotExist:
-            return JsonResponse({'success': False, 'error': '用户不存在'})
-    return JsonResponse({'success': False, 'error': '方法不允许'})
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': '只有管理员可以执行此操作'})
+    
+    try:
+        user = User.objects.get(id=user_id)
+        
+        # 不允许修改超级用户的云栈成员状态
+        if user.is_superuser:
+            return JsonResponse({'success': False, 'error': '不能修改管理员的云栈成员状态'})
+        
+        # 切换云栈成员状态
+        user.is_cloud_member = not user.is_cloud_member
+        user.save()
+        
+        return JsonResponse({
+            'success': True, 
+            'is_cloud_member': user.is_cloud_member
+        })
+    except User.DoesNotExist:
+        return JsonResponse({'success': False, 'error': '用户不存在'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def logout_view(request):
     """自定义退出视图函数"""
