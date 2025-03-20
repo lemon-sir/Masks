@@ -13,6 +13,9 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.db.models import Count
+from django.utils import timezone
+from datetime import datetime
+import pytz
 
 # 添加登录要求装饰器
 @login_required(login_url='masks:login')
@@ -238,8 +241,22 @@ def is_admin(user):
 
 @user_passes_test(is_admin)
 def user_management(request):
+    if not request.user.is_superuser:
+        return redirect('masks:compare_masks')
+    
     users = User.objects.all().order_by('-date_joined')
-    return render(request, 'masks/user_management.html', {'users': users})
+    
+    # 转换时区为北京时间
+    beijing_tz = pytz.timezone('Asia/Shanghai')
+    for user in users:
+        if user.date_joined:
+            user.date_joined = user.date_joined.astimezone(beijing_tz)
+        if user.last_login:
+            user.last_login = user.last_login.astimezone(beijing_tz)
+    
+    return render(request, 'masks/user_management.html', {
+        'users': users
+    })
 
 @user_passes_test(is_admin)
 def toggle_user_status(request, user_id):
@@ -270,14 +287,24 @@ def delete_user(request, user_id):
 
 @user_passes_test(is_admin)
 def user_history(request, user_id):
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'error': '权限不足'})
+        
     try:
         user = User.objects.get(id=user_id)
         history = user.queries.all()
+        
+        # 转换时区为北京时间
+        beijing_tz = pytz.timezone('Asia/Shanghai')
         history_data = [{
-            'query_time': h.query_time.strftime('%Y-%m-%d %H:%M:%S'),
+            'query_time': h.query_time.astimezone(beijing_tz).strftime('%Y-%m-%d %H:%M:%S'),
             'mask_name': h.mask_name
         } for h in history]
-        return JsonResponse({'success': True, 'history': history_data})
+        
+        return JsonResponse({
+            'success': True,
+            'history': history_data
+        })
     except User.DoesNotExist:
         return JsonResponse({'success': False, 'error': '用户不存在'})
 

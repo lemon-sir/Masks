@@ -507,10 +507,11 @@ document.getElementById('searchInput').addEventListener('input', function() {
 
 document.getElementById('uploadForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    {% if not user.is_cloud_member %}
+    const isCloudMember = "{{ user.is_cloud_member|yesno:'true,false' }}";
+    if (isCloudMember !== 'true') {
         alert('你当前不是云栈帮众，无法使用此功能');
         return;
-    {% endif %}
+    }
     console.log('Form submitted');  // 调试信息
     
     const formData = new FormData(this);
