@@ -219,17 +219,38 @@
 </style>
 
 <div class="container mt-4">
-    <h2 class="mb-4">平行服脸谱属性查询</h2>
     <div class="alert alert-info mb-4">
         <small>提示：输入0的属性将不会参与脸谱推荐计算</small>
         <br>
         <small>
-            <a href="https://www.douyin.com/video/7477457500212596018" target="_blank" class="alert-link">
+            <a href="https://www.douyin.com/video/7481983319643606306" target="_blank" class="alert-link">
                 查看教程视频 <i class="bi bi-box-arrow-up-right"></i>
             </a>
         </small>
     </div>
     
+    <!-- 修改图片上传表单 -->
+    <form method="post" enctype="multipart/form-data" class="mb-4" id="uploadForm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="imageUpload" class="form-label">上传截图（可多选）</label>
+            <input type="file" 
+                   class="form-control" 
+                   id="imageUpload" 
+                   name="images" 
+                   accept="image/*" 
+                   multiple
+                   title="选择要上传的截图"
+                   aria-label="选择要上传的截图">
+        </div>
+        <button type="submit" 
+                class="btn btn-primary"
+                title="识别属性">
+            识别属性
+        </button>
+    </form>
+    
+    <!-- 原有的查询表单 -->
     <form method="post" class="mb-4">
         {% csrf_token %}
         <div class="row g-1">  <!-- 减小间距 -->
@@ -438,6 +459,34 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error('找不到导出按钮');  // 调试信息
     }
+    
+    // 检查是否有需要加载的参数
+    const paramsToLoad = localStorage.getItem('params_to_load');
+    if (paramsToLoad) {
+        try {
+            const params = JSON.parse(paramsToLoad);
+            // 填充表单
+            for (const [key, value] of Object.entries(params)) {
+                const input = document.querySelector(`input[name="${key}"]`);
+                if (input) {
+                    input.value = value;
+                    // 触发 input 事件以确保任何相关的表单验证或事件处理器都被触发
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+            }
+            // 清除已加载的参数
+            localStorage.removeItem('params_to_load');
+            
+            // 滚动到表单位置
+            const form = document.querySelector('form');
+            if (form) {
+                form.scrollIntoView({ behavior: 'smooth' });
+            }
+        } catch (error) {
+            console.error('Error loading params:', error);
+            alert('加载参数时发生错误');
+        }
+    }
 });
 
 document.getElementById('searchInput').addEventListener('input', function() {
@@ -455,5 +504,88 @@ document.getElementById('searchInput').addEventListener('input', function() {
         }
     });
 });
+
+document.getElementById('uploadForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const isCloudMember = "{{ user.is_cloud_member|yesno:'true,false' }}";
+    if (isCloudMember !== 'true') {
+        alert('你当前不是云栈帮众，无法使用此功能');
+        return;
+    }
+    console.log('Form submitted');  // 调试信息
+    
+    const formData = new FormData(this);
+    const files = formData.getAll('images');
+    console.log('Files to upload:', files);  // 调试信息
+    
+    fetch('{% url "masks:upload_image" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => {
+        console.log('Response received:', response);  // 调试信息
+        return response.json();
+    })
+    .then(data => {
+        console.log('Data received:', data);  // 调试信息
+        if (data.success) {
+            // 填充表单数据
+            Object.keys(data.data).forEach(key => {
+                const input = document.querySelector(`input[name="${key}"]`);
+                if (input) {
+                    input.value = data.data[key];
+                    console.log(`Set ${key} to ${data.data[key]}`);  // 调试信息
+                }
+            });
+        } else {
+            alert('识别失败：' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('上传失败，请重试');
+    });
+});
+
+function uploadImages() {
+    const formData = new FormData();
+    const files = document.getElementById('imageUpload').files;
+    
+    if (files.length === 0) {
+        alert('请选择图片');
+        return;
+    }
+    
+    for (let file of files) {
+        formData.append('images', file);
+    }
+    
+    fetch('/upload/', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateFormValues(data.data);
+        } else {
+            alert('识别失败：' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('上传出错: ' + error);
+    });
+}
 </script>
+
+<!-- 添加进度条 HTML -->
+<div class="progress-container" style="margin: 10px 0; display: none;">
+    <div class="progress-status" style="text-align: center; margin-bottom: 10px;">
+        <span id="progressText">准备处理...</span>
+    </div>
+    <progress id="uploadProgress" value="0" max="100" style="width: 100%;"></progress>
+</div>
 {% endblock %} 

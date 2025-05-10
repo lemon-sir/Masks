@@ -1,0 +1,209 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="user-management-container">
+    <div class="management-header">
+        <h2 class="page-title">用户管理</h2>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="搜索用户...">
+        </div>
+    </div>
+    
+    <div class="user-list">
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>用户名</th>
+                    <th>注册时间</th>
+                    <th>最后登录</th>
+                    <th>查询次数</th>
+                    <th>状态</th>
+                    <th>云栈成员</th>
+                    <th>角色</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                    <td>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                    <td>
+                        <button class="btn-history" data-user-id="{{ user.id }}">
+                            {{ user.queries.count }} 次
+                        </button>
+                    </td>
+                    <td>
+                        <span class="status-badge {% if user.is_active %}active{% else %}inactive{% endif %}">
+                            {{ user.is_active|yesno:"启用,禁用" }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input cloud-member-toggle"
+                                   id="cloudMember{{ user.id }}" 
+                                   data-user-id="{{ user.id }}"
+                                   {% if user.is_cloud_member %}checked{% endif %}
+                                   {% if user.is_superuser %}disabled{% endif %}>
+                            <label class="custom-control-label" for="cloudMember{{ user.id }}"></label>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="role-badge {% if user.is_superuser %}admin{% else %}user{% endif %}">
+                            {{ user.is_superuser|yesno:"管理员,普通用户" }}
+                        </span>
+                    </td>
+                    <td class="actions">
+                        {% if not user.is_superuser %}
+                        <button class="btn-toggle-status" data-user-id="{{ user.id }}" data-status="{{ user.is_active|yesno:'禁用,启用' }}">
+                            {{ user.is_active|yesno:"禁用,启用" }}
+                        </button>
+                        <button class="btn-delete" data-user-id="{{ user.id }}">删除</button>
+                        {% else %}
+                        <span class="no-action">管理员账号</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 历史记录模态框 -->
+<div id="historyModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3>查询历史记录</h3>
+        <div id="historyContent"></div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 搜索功能
+    const searchInput = document.getElementById('searchInput');
+    const tableRows = document.querySelectorAll('.user-table tbody tr');
+
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        tableRows.forEach(row => {
+            const username = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+            row.style.display = username.includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // 切换用户状态
+    document.querySelectorAll('.btn-toggle-status').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            const status = this.dataset.status;
+            if (confirm(`确定要${status}该用户吗？`)) {
+                fetch(`/toggle_user_status/${userId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('操作失败：' + data.error);
+                    }
+                });
+            }
+        });
+    });
+
+    // 删除用户
+    document.querySelectorAll('.btn-delete').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            if (confirm('确定要删除该用户吗？此操作不可恢复。')) {
+                fetch(`/delete_user/${userId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    },
+                }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('删除失败：' + data.error);
+                    }
+                });
+            }
+        });
+    });
+
+    // 查看历史记录
+    const modal = document.getElementById('historyModal');
+    const closeBtn = document.querySelector('.close');
+    const historyContent = document.getElementById('historyContent');
+
+    document.querySelectorAll('.btn-history').forEach(button => {
+        button.addEventListener('click', function() {
+            const userId = this.dataset.userId;
+            fetch(`/user_history/${userId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let historyHtml = '<table class="history-table">';
+                        historyHtml += '<tr><th>查询时间</th><th>查询内容</th></tr>';
+                        data.history.forEach(item => {
+                            historyHtml += `<tr>
+                                <td>${item.query_time}</td>
+                                <td>${item.mask_name}</td>
+                            </tr>`;
+                        });
+                        historyHtml += '</table>';
+                        historyContent.innerHTML = historyHtml;
+                        modal.style.display = 'block';
+                    } else {
+                        alert('获取历史记录失败：' + data.error);
+                    }
+                });
+        });
+    });
+
+    closeBtn.onclick = function() {
+        modal.style.display = 'none';
+    }
+
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // 添加云栈成员切换处理
+    document.querySelectorAll('.cloud-member-toggle').forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const userId = this.dataset.userId;
+            fetch(`/toggle-cloud-member/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    this.checked = !this.checked;
+                    alert(data.error || '操作失败');
+                }
+            })
+            .catch(error => {
+                this.checked = !this.checked;
+                alert('操作失败');
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 
